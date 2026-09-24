@@ -1,33 +1,40 @@
-# Update all task-specific values after the official competition release.
+# Entity-resolution experiment configuration. The ER CLI will consume these settings.
 seed: 42
 
 data:
-  train_path: data/train.csv
-  test_path: data/test.csv
-  target: null
-  id_column: null
+  root: 6ab10eb3b23ba_student_resource/student_resource/dataset
+  train_dir: train
+  test_dir: test
+  train_source1: train_source1.tsv
+  train_source2: train_source2.tsv
+  train_source3: train_source3.tsv
+  ground_truth: train_ground_truth.tsv
+  test_source1: test_source1.tsv
+  test_source2: test_source2.tsv
+  test_source3: test_source3.tsv
+  delimiter: "\t"
 
 validation:
-  # Choose based on problem structure: kfold, stratified_kfold, group_kfold, or holdout.
-  strategy: kfold
-  n_splits: 5
-  random_state: 42
-  group_column: null
+  strategy: source1_holdout
   test_size: 0.2
+  random_state: 42
+  metric: macro_f0.5
+
+blocking:
+  # Planned settings; tune candidate recall and pair volume on validation.
+  name_top_k: 20
+  address_top_k: 20
+  use_exact_keys: true
+  use_character_tfidf: true
+  enforce_country_match: false
 
 model:
-  type: lightgbm
-  task: regression  # regression or classification
-  params: {}
+  type: pairwise_classifier
+  # Candidate-level threshold selection will be optimized against per-entity macro F0.5.
+  threshold_source2: null
+  threshold_source3: null
 
-metric:
-  name: rmse  # Used only for the starter baseline; implement official metric in src/metrics.py.
-
-artifacts:
-  model_path: models/baseline.joblib
-  feature_info_path: outputs/feature_info.json
-
-submission:
-  id_column: null
-  prediction_column: prediction
-  output_path: submissions/submission.csv
+outputs:
+  directory: outputs
+  matching: matching_results.tsv
+  candidates: candidate_pairs.tsv

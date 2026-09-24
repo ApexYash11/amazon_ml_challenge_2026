@@ -1,54 +1,78 @@
-# Amazon ML Challenge 2026
+# Amazon ML Challenge 2026 — Business Entity Resolution
 
-Competition workspace for the Amazon ML Challenge 2026. Treat the problem, data, target, metric, and constraints as unknown until Amazon releases the official materials; this framework does not assume the 2025 task.
+This repository is a workspace for matching business records across three independent sources. Source 1 is the reference set; for every Source 1 record, predict zero or more matching Source 2 and Source 3 IDs.
+
+## Challenge data
+
+The released data is already present at:
 
 ```text
-Problem understanding
-        ↓
-EDA
-        ↓
-Validation design
-        ↓
-Fast baseline
-        ↓
-Error analysis
-        ↓
-Targeted experiments
-        ↓
-Strong models
-        ↓
-Ensemble
-        ↓
-Submission validation
+6ab10eb3b23ba_student_resource/student_resource/dataset/
+├── train/
+│   ├── train_source1.tsv
+│   ├── train_source2.tsv
+│   ├── train_source3.tsv
+│   └── train_ground_truth.tsv
+└── test/
+    ├── test_source1.tsv
+    ├── test_source2.tsv
+    └── test_source3.tsv
 ```
 
-## First 6 Hours
+All files are TSV and must be read with a tab delimiter. The sources have `entity_id`, `business_name`, `business_address`, and `country`; labels map each Source 1 ID to a comma-separated set of Source 2/3 IDs. Training countries are US and India; test also includes France, so country handling must remain open-set.
 
-### Hour 0–1
+## Project architecture
 
-Understand the target, official metric, train/test schema, prediction unit, constraints, and required submission format. Choose validation to reflect the problem structure; do not blindly use random KFold.
+The generic tabular starter has been superseded by an entity-resolution pipeline. The intended flow is:
 
-### Hour 1–3
+```text
+TSV data + labels
+       ↓
+Load, validate schema, normalize text (retain raw fields)
+       ↓
+Candidate generation across S1×S2 and S1×S3
+       ↓
+Pairwise name/address/country feature construction
+       ↓
+Pair scorer + calibrated decision policy
+       ↓
+Per-S1 predictions and candidate audit files
+       ↓
+Macro F0.5 validation + submission format validator
+```
 
-Build the fastest reasonable baseline and establish a trustworthy validation score.
+The candidate set is the exact final set passed to the scorer and must include every emitted match. The matcher predicts links independently; it must allow multiple S2/S3 matches per S1 and empty predictions for singletons. Keep country comparisons as string equality/features rather than a closed categorical vocabulary.
 
-### Hour 3–6
+See [PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for the staged implementation and validation plan. Current reusable pieces include the macro-F0.5 evaluator in `src/metrics.py`; `src/train.py` and `src/inference.py` are still generic tabular starters and are not yet the ER pipeline.
 
-Investigate missingness, duplicates, leakage, train/test shift, target distribution, feature importance, subgroup errors, and alternative feature representations.
+## Outputs and validation
 
-## 72-hour strategy
+Final artifacts go in `outputs/` (or the required submission package's `output/`):
 
-**Day 1:** Explore multiple approaches, establish reliable CV, and identify where the signal comes from.
+- `matching_results.tsv`: `source1_entity_id`, `matched_entity_ids`
+- `candidate_pairs.tsv`: `source1_entity_id`, `candidate_entity_ids`
 
-**Day 2:** Stop broad exploration, optimize the strongest approaches, perform error analysis, and improve features.
+Run the supplied validator from the extracted resource directory:
 
-**Day 3:** Ensemble complementary models, verify inference, generate the final submission, and prepare the approach document.
+```powershell
+python utils/validate_submission.py `
+  --matching ..\..\outputs\matching_results.tsv `
+  --candidate ..\..\outputs\candidate_pairs.tsv `
+  --test-dir dataset\test
+```
 
-## Quick start
+Use a validation split over Source 1 entities, construct train/validation candidate pairs without using held-out labels during fitting, and tune thresholds against macro F0.5. Do not use external identity lookup, geocoding, or business data; the pipeline must rely only on the provided challenge files.
 
-1. Put the released files in `data/` and edit `configs/baseline.yaml` after reviewing the official task.
-2. Start the first-look notebook with `python -m notebook notebooks/00_first_look.ipynb` (or `jupyter notebook notebooks/00_first_look.ipynb`).
-3. Choose a validation strategy that matches the data, set the target and submission columns, and implement `competition_metric` in `src/metrics.py`.
-4. Run the baseline with `python -m src.train --config configs/baseline.yaml`; generate predictions with `python -m src.inference --config configs/baseline.yaml`.
+## Repository map
 
-The starter trainer covers ordinary tabular regression and classification with LightGBM. Adapt validation, metric, features, and model once the official problem is known. Text, image, and multimodal pipelines are extension points, not prebuilt assumptions.
+```text
+configs/       ER data paths and experiment settings
+data/          optional local working data; official supplied data stays in the extracted resource folder
+docs/          architecture and implementation plan
+experiments/   experiment log
+models/        locally trained artifacts
+notebooks/     exploratory analysis
+outputs/       generated prediction and candidate files
+src/           implementation modules
+submissions/   submission hygiene notes
+```
