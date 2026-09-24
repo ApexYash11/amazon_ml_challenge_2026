@@ -1,0 +1,33 @@
+# Update all task-specific values after the official competition release.
+seed: 42
+
+data:
+  train_path: data/train.csv
+  test_path: data/test.csv
+  target: null
+  id_column: null
+
+validation:
+  # Choose based on problem structure: kfold, stratified_kfold, group_kfold, or holdout.
+  strategy: kfold
+  n_splits: 5
+  random_state: 42
+  group_column: null
+  test_size: 0.2
+
+model:
+  type: lightgbm
+  task: regression  # regression or classification
+  params: {}
+
+metric:
+  name: rmse  # Used only for the starter baseline; implement official metric in src/metrics.py.
+
+artifacts:
+  model_path: models/baseline.joblib
+  feature_info_path: outputs/feature_info.json
+
+submission:
+  id_column: null
+  prediction_column: prediction
+  output_path: submissions/submission.csv
