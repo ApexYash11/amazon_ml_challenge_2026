@@ -43,7 +43,7 @@ Macro F0.5 validation + submission format validator
 
 The candidate set is the exact final set passed to the scorer and must include every emitted match. The matcher predicts links independently; it must allow multiple S2/S3 matches per S1 and empty predictions for singletons. Keep country comparisons as string equality/features rather than a closed categorical vocabulary.
 
-See [PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for the staged implementation and validation plan. Current reusable pieces include the macro-F0.5 evaluator in `src/metrics.py`; `src/train.py` and `src/inference.py` are still generic tabular starters and are not yet the ER pipeline.
+See [PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for the staged implementation and validation plan, and [EDA_FINDINGS.md](docs/EDA_FINDINGS.md) for dataset scale, label structure, observed link patterns, and the recommended approach. Current reusable pieces include the macro-F0.5 evaluator in `src/metrics.py`; `src/train.py` and `src/inference.py` are still generic tabular starters and are not yet the ER pipeline.
 
 ## Outputs and validation
 
